@@ -1,0 +1,75 @@
+<html>
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+  <nav class="bg-slate-800 text-white p-4 flex justify-between items-center shadow-lg">
+    <button onclick="goBack()" class="bg-slate-700 px-4 py-2 rounded-lg font-bold"><i class="fa fa-arrow-left mr-2"></i>KEMBALI</button>
+    <div class="text-center">
+      <h1 class="font-black text-sm">ITC YARD MANAGEMENT SYSTEM</h1>
+      <h4 class="font-black text-sm">DATABASE LOGISTIK</h4>
+      <p id="last-update" class="text-[8px] opacity-50 uppercase">Memuat data...</p>
+    </div>
+    <div class="w-10"></div>
+  </nav>
+
+  <main class="flex-grow container mx-auto p-4 overflow-x-auto">
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-gray-200 font-bold uppercase text-[10px]">
+          <tr><th class="p-3">Plate</th><th class="p-3">Waktu</th><th class="p-3">Workstation</th><th class="p-3">Location</th><th class="p-3">PIC</th></tr>
+        </thead>
+        <tbody id="dbBody" class="divide-y text-gray-600 font-medium"></tbody>
+      </table>
+    </div>
+  </main>
+
+<footer class="mt-auto py-10 border-t border-slate-900 bg-slate-950/50 backdrop-blur-md">
+  <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+    <div class="text-center md:text-left">
+      <p class="text-[10px] tracking-[0.3em] text-slate-500 uppercase font-black mb-1">Developed By</p>
+      <div class="flex items-center gap-2 justify-center md:justify-start">
+        <a class="text-blue-400 font-extrabold hover:text-blue-300 transition-colors tracking-tighter text-lg">DAC Project</a>
+        <span class="h-4 w-[1px] bg-slate-800"></span>
+        <span class="text-[10px] font-bold text-slate-600 bg-slate-900 px-2 py-0.5 rounded">v1.85 SECURE</span>
+      </div>
+    </div>
+    <div class="order-3 md:order-2 text-center">
+      <p class="text-[10px] text-slate-700 font-bold uppercase tracking-widest">&copy; 2026 DAC MEDIA PROJECT. <i class="fa-solid fa-circle-info text-white text-[10px]">ALL RIGHTS RESERVED.</i></p>
+    </div>
+  </div>
+</footer>
+
+  <script>
+	const API_URL = "https://script.google.com/macros/s/AKfycbzKnrP3KIq-wvGcw5CDUZ_an0JcAy2DPpWqLGBCLhWQReuGXu2qBU4vAvqz34adITQl/exec";
+	  
+    window.onload = () => { 
+      loadDB(); 
+      setInterval(loadDB, 5000); // Update database setiap 5 detik
+    };
+
+function loadDB() {
+  fetch(`${API_URL}?action=getFullDatabase`)
+    .then(res => res.json())
+    .then(data => renderTable(data));
+}
+
+    function renderTable(d) {
+      const now = new Date().toLocaleTimeString();
+      document.getElementById('last-update').innerText = "Last Update: " + now;
+      document.getElementById('dbBody').innerHTML = d.slice(1).reverse().map(r => `
+        <tr class="hover:bg-blue-50 transition-colors">
+          <td class="p-3 font-black text-blue-700 uppercase">${r[0]}</td>
+          <td class="p-3 text-[10px] font-bold text-gray-400">${r[1]}<br>${r[2]}</td>
+          <td class="p-3"><span class="bg-slate-100 px-2 py-1 rounded text-[9px] font-black border border-slate-200 uppercase">${r[5]}</span></td>
+          <td class="p-3 font-mono font-black text-slate-800">${r[10]}</td>
+          <td class="p-3 italic text-gray-400 text-xs">${r[9]}</td>
+        </tr>
+      `).join('');
+    }
+    function goBack() { window.top.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>

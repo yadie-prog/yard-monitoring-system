@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .bg-itc { background-color: #1e293b; }
+    /* Memastikan input di HP tidak terlalu kecil */
+    .swal2-input-custom { width: 95%; margin: 8px auto; padding: 12px; border: 1px solid #ccc; border-radius: 8px; display: block; font-size: 16px; }
+    .status-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #22c55e; margin-right: 5px; animation: blink 1.5s infinite; }
+    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    #login-overlay { display: none; }
+    .glass-effect { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+    
+    /* Perbaikan agar tombol logout tidak bertabrakan di layar kecil */
+    @media (max-width: 640px) {
+      header { padding-top: 50px !important; }
+      .logout-btn { top: 10px !important; right: 10px !important; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+<div id="login-overlay" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center">
+      <div class="mb-6">
+        <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-4">
+          <i class="fa fa-user-shield text-white text-3xl"></i>
+        </div>
+        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Sesi TERKUNCI</h2>
+        <p class="text-slate-500 text-sm">Silahkan login untuk melanjutkan</p>
+      </div>
+      
+      <div class="text-left mb-4">
+        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Username / Nama PIC</label>
+        <input type="text" id="login-pic-name" placeholder="NAMA ANDA..." class="w-full p-4 border-2 rounded-xl text-center font-bold uppercase outline-none focus:border-blue-500">
+      </div>
+
+      <div class="text-left mb-6">
+        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Password Sistem</label>
+        <input type="password" id="login-password" placeholder="••••••••" class="w-full p-4 border-2 rounded-xl text-center font-bold outline-none focus:border-blue-500">
+      </div>
+
+      <button onclick="handleLogin()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg active:scale-95 uppercase">Masuk Ke Sistem</button>
+      <p class="mt-6 text-[10px] text-slate-400 font-bold uppercase tracking-widest">&copy; 2026 ITC YARD MONITORING SYSTEM</p>
+    </div>
+  </div>
+
+  <header class="bg-itc text-white py-6 shadow-md text-center relative">
+    <div class="absolute right-4 top-4">
+      <button onclick="handleLogout()" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 border border-red-500/50">
+        <i class="fa fa-power-off"></i> Logout
+      </button>
+    </div>
+    <h2 class="text-2xl font-black tracking-widest uppercase">ITC YARD - MONITORING SYSTEM</h2>
+    <p class="text-[8px] opacity-70"> Versi 1.85 - Web APPS Edition</p>
+    <div class="flex justify-center items-center gap-4 mt-2">
+       <p class="text-[10px] opacity-70"><span class="status-indicator"></span> SISTEM REAL-TIME AKTIF</p>
+       <span class="h-3 w-[1px] bg-white/20"></span>
+       <p class="text-[10px] font-bold text-blue-400 uppercase tracking-tighter"><i class="fa fa-user mr-1"></i>PIC :  <span id="display-pic-name">...</span></p>
+    </div>
+  </header>
+
+  <main class="flex-grow container mx-auto px-4 py-8">
+<div id="summary-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-8 text-center"></div>
+
+      <div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+      <input type="text" id="plateSearch" placeholder="CARI DATA PLAT NOMOR..." class="w-full p-4 border-2 rounded-xl mb-4 text-center font-bold text-lg uppercase outline-none focus:border-blue-500 shadow-inner">
+      <div class="flex gap-2 mb-4">
+  		<button onclick="handleSearch()" class="flex-1 bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition uppercase shadow-md active:scale-95">Search</button>		  
+  		<button onclick="goToDatabase()" class="bg-gray-800 text-white px-6 rounded-xl hover:bg-black transition shadow-md active:scale-95"><i class="fa fa-database"></i></button>
+  		<button onclick="window.location.href='peminjaman.html'" class="flex-1 bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition uppercase shadow-md active:scale-95">Peminjaman</button>
+	</div>
+      <button onclick="showInputForm()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 transition uppercase shadow-md active:scale-95"><i class="fa fa-plus-circle mr-2"></i>Input DATA Baru</button>
+    </div>
+  </main>
+
+<footer class="mt-auto py-10 border-t border-slate-900 bg-slate-950/50 backdrop-blur-md">
+  <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+    <div class="text-center md:text-left">
+      <p class="text-[10px] tracking-[0.3em] text-slate-500 uppercase font-black mb-1">Developed By</p>
+      <div class="flex items-center gap-2 justify-center md:justify-start">
+        <a class="text-blue-400 font-extrabold hover:text-blue-300 transition-colors tracking-tighter text-lg">DAC Project</a>
+        <span class="h-4 w-[1px] bg-slate-800"></span>
+        <span class="text-[10px] font-bold text-slate-600 bg-slate-900 px-2 py-0.5 rounded">v1.85 SECURE</span>
+      </div>
+    </div>
+    <div class="order-3 md:order-2 text-center">
+      <p class="text-[10px] text-slate-700 font-bold uppercase tracking-widest">&copy; 2026 DAC MEDIA PROJECT. <i class="fa-solid fa-circle-info text-white text-[10px]">ALL RIGHTS RESERVED.</i></p>
+    </div>
+    <div class="order-2 md:order-3 flex gap-4">
+      <button onclick="showDevInfo()" class="hover:text-white text-slate-400 transition-colors text-[10px] uppercase font-bold">Tentang Pengembang</button>
+      <button onclick="showUserManual()" class="group flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20">
+        <span class="text-[10px] font-black text-white uppercase tracking-tighter">Petunjuk</span>
+      </button>
+    </div>
+  </div>
+</footer>
+
+<script>
+    // API URL dari Google Apps Script
+    const API_URL = "https://script.google.com/macros/s/AKfycbzKnrP3KIq-wvGcw5CDUZ_an0JcAy2DPpWqLGBCLhWQReuGXu2qBU4vAvqz34adITQl/exec";
+    
+    let CURRENT_PIC = "";
+
+    window.onload = () => { 
+      checkSession();
+      refreshSummary();
+      setInterval(refreshSummary, 10000); // Diperpanjang ke 10 detik agar lebih hemat kuota API
+    };
+
+    function checkSession() {
+      const savedPic = localStorage.getItem("itc_pic_session");
+      if (!savedPic) {
+        document.getElementById("login-overlay").style.display = "flex";
+      } else {
+        CURRENT_PIC = savedPic;
+        document.getElementById("display-pic-name").innerText = CURRENT_PIC;
+        document.getElementById("login-overlay").style.display = "none";
+      }
+    }
+
+function handleLogin() {
+      const name = document.getElementById("login-pic-name").value.trim().toUpperCase();
+      const pass = document.getElementById("login-password").value;
+      
+      // Validasi Input Kosong
+      if (!name) return Swal.fire('Error', 'Nama PIC wajib diisi!', 'error');
+      if (!pass) return Swal.fire('Error', 'Password wajib diisi!', 'error');
+      
+      // Cek Password
+      if (pass === "itc2026") {
+        localStorage.setItem("itc_pic_session", name);
+        checkSession();
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Login Berhasil: ' + name,
+          showConfirmButton: false,
+          timer: 3000
+        });
+      } else {
+        Swal.fire('Akses Ditolak', 'Password yang Anda masukkan salah!', 'error');
+      }
+    }
+
+  function handleLogout() {
+    Swal.fire({
+      title: 'Konfirmasi Logout',
+      text: "Anda akan keluar dan kembali ke layar login.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Keluar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem("itc_pic_session");
+        location.reload(); // Reload halaman
+      }
+    });
+  }
+
+    function refreshSummary() {
+      fetch(`${API_URL}?action=getSummary`)
+        .then(response => response.json())
+        .then(data => renderSummary(data))
+        .catch(error => console.error('Error Summary:', error));
+    }
+
+    function renderSummary(data) {
+      const labels = [
+        {key:'rental', label:'UNIT RENTAL', col:'bg-red-600', search:'rental'},
+        {key:'vendor', label:'VENDOR', col:'bg-slate-500', search:'vendor'},
+        {key:'courtesy', label:'COURTESY UNIT', col:'bg-blue-900', search:'courtesy'},
+        {key:'pio', label:'PIO UNIT', col:'bg-blue-900', search:'pio'},
+        {key:'ready', label:'Ready To Party', col:'bg-green-600', search:'ready to party'},
+        {key:'inbound', label:'Inbound', col:'bg-blue-500', search:'inbound'},
+        {key:'washing', label:'Washing', col:'bg-cyan-500', search:'washing'}, 
+        {key:'waitingQC', label:'Waiting QC', col:'bg-yellow-500', search:'waiting qc'},
+        {key:'refurb', label:'Refurbish', col:'bg-indigo-500', search:'refurbishment'}, 
+        {key:'detailing', label:'Detailing', col:'bg-purple-500', search:'detailing'},
+        {key:'pdi', label:'PDI Process', col:'bg-pink-500', search:'pdi'}, 
+        {key:'display', label:'Display Area', col:'bg-orange-500', search:'display area'}
+      ];
+      
+      document.getElementById('summary-grid').innerHTML = labels.map(i => `
+        <div onclick="showCategoryDetail('${i.search}', '${i.label}')" 
+             class="${i.col} text-white p-3 rounded-xl shadow-lg transition-all transform active:scale-95 border-b-4 border-black/20 cursor-pointer hover:brightness-110">
+          <p class="text-[9px] font-black uppercase leading-tight opacity-80">${i.label}</p>
+          <h3 class="text-xl font-black">${data[i.key] || 0}</h3>
+        </div>
+      `).join('');
+    }
+
+    function showCategoryDetail(category, label) {
+      Swal.fire({
+        title: 'Mohon Tunggu...',
+        html: 'Sedang mengambil data unit...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
+      fetch(`${API_URL}?action=getDetailsByCategory&category=${encodeURIComponent(category)}`)
+        .then(res => res.json())
+        .then(platList => {
+          if (!platList || platList.length === 0) {
+            Swal.fire({ icon: 'info', title: 'Kosong', text: `Tidak ada unit dengan status ${label}`, confirmButtonColor: '#1e293b' });
+            return;
+          }
+
+          let listHtml = `
+            <div class="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto p-2">
+              ${platList.map(plat => `<div class="bg-gray-100 p-2 rounded-lg border border-gray-200 text-center font-bold text-slate-700 shadow-sm">${plat}</div>`).join('')}
+            </div>
+            <p class="text-[10px] text-gray-400 mt-4 text-center uppercase tracking-widest font-bold">Total: ${platList.length} Unit</p>
+          `;
+
+          Swal.fire({
+            title: `<span class="text-blue-600 font-black uppercase italic">${label}</span>`,
+            width: '400px',
+            html: listHtml,
+            confirmButtonText: 'TUTUP',
+            confirmButtonColor: '#1e293b'
+          });
+        });
+    }
+
+    function handleSearch() {
+      const plate = document.getElementById('plateSearch').value.trim().replace(/\s/g, '').toUpperCase();
+      if(!plate) return Swal.fire('Peringatan', 'Masukkan Nomor Plat!', 'warning');
+      
+      Swal.fire({ title: 'Mencari...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      fetch(`${API_URL}?action=searchPlate&plate=${encodeURIComponent(plate)}`)
+        .then(response => response.json())
+        .then(data => {
+            Swal.close();
+            if(!data || !data.latest) return Swal.fire('Tidak Ditemukan', 'Plat tidak terdaftar di Database System.', 'info');
+            
+            const l = data.latest;
+            let hist = data.history.map(h => `<tr class="text-[10px] border-b"><td>${h[1]}</td><td>${h[5]}</td><td>${h[10]}</td></tr>`).join('');
+            
+            Swal.fire({
+              title: `HASIL TERBARU: ${l[0]}`,
+              width: '600px',
+              html: `
+                <div class="text-left text-[11px] bg-blue-50 p-4 rounded-xl grid grid-cols-2 gap-2 mb-4 border border-blue-200">
+                  <div><b>Tgl/Jam:</b> ${l[1]} ${l[2]}</div>
+                  <div><b>Workstation:</b> ${l[5]}</div>
+                  <div><b>Lokasi:</b> ${l[10]}</div>
+                  <div><b>Fuel:</b> ${l[6]}</div>
+                  <div><b>Customer:</b> ${l[8]}</div>
+                  <div><b>Peminjam:</b> ${l[7]}</div>
+                </div>
+                <p class="text-left font-bold text-[10px] uppercase text-gray-400 mb-2">4 Riwayat Sebelumnya</p>
+                <table class="w-full text-left text-[10px]"><thead class="bg-gray-200"><tr><th>TGL</th><th>WORKSTATION</th><th>LOC</th></tr></thead>
+                <tbody>${hist || '<tr><td colspan="3" class="text-center py-2 text-gray-400 italic">Tidak ada history.</td></tr>'}</tbody></table>`,
+              confirmButtonText: 'Tutup'
+            });
+        })
+        .catch(() => Swal.fire('Error', 'Gagal menghubungi server', 'error'));
+    }
+
+    function showInputForm() {
+      Swal.fire({
+        title: 'INPUT DATA YARD',
+        confirmButtonText: 'SIMPAN DATA',
+        showCancelButton: true,
+        customClass: { confirmButton: 'bg-indigo-600', cancelButton: 'bg-gray-400' },
+        html: `
+          <div class="text-left space-y-1"> 
+            <label class="text-[9px] font-bold text-gray-400 uppercase ml-5">Plat Nomor (Auto-Clean)</label>
+            <input id="i_plate" class="swal2-input-custom !mt-0" placeholder="Contoh: B1234XXX" oninput="this.value = this.value.replace(/\\s/g, '').toUpperCase()">
+            <div style="display:flex; gap:5px; width:90%; margin:auto;">
+              <select id="i_park" class="swal2-input-custom">
+                <option value="">-- Lokasi Parkir --</option>
+                <option>A1</option><option>A2</option><option>B1</option><option>B2</option>
+                <option>PDI Area</option><option>Washing Area</option><option>Operator Area</option>
+                <option>Charging Area</option><option>Detailing Area</option><option>Customer Area</option>
+                <option>PARALEL</option><option>-</option>
+              </select>
+              <input type="number" id="i_lot" class="swal2-input-custom" placeholder="Lot (1-20)">
+            </div>
+            <select id="i_ws" class="swal2-input-custom">
+              <option value="">-- Pilih Workstation --</option>
+              <option>Inbound Check</option><option>Waiting QC</option><option>Washing</option>
+              <option>PDI</option><option>Detailing</option><option>Refurbishment</option>
+              <option>Ready to Party</option><option>Display</option><option>Charging</option><option>Hand Over</option>
+            </select>
+            <select id="i_fuel" class="swal2-input-custom">
+              <option value="">-- BBM --</option>
+              ${[10,20,30,40,50,60,70,80,90,100].map(v => `<option>${v}%</option>`).join('')}
+            </select>
+            <input id="i_pem" class="swal2-input-custom" placeholder="Nama Peminjam (Wajib)">
+            <input id="i_cust" class="swal2-input-custom" placeholder="Customer (Opsional)">
+            <div class="bg-gray-100 p-3 rounded-xl w-[90%] mx-auto mt-2 border border-dashed border-gray-300">
+               <p class="text-[9px] font-bold text-gray-400 uppercase mb-1 text-center">PIC yang Bertugas</p>
+               <input id="i_pic" class="w-full bg-transparent text-center font-black text-indigo-600 outline-none" value="${CURRENT_PIC}" readonly>
+            </div>
+          </div>`,
+        preConfirm: () => {
+          const data = {
+            plate: document.getElementById('i_plate').value.replace(/\s/g, '').toUpperCase(),
+            parking: document.getElementById('i_park').value,
+            lot: document.getElementById('i_lot').value,
+            workstation: document.getElementById('i_ws').value,
+            fuel: document.getElementById('i_fuel').value,
+            peminjam: document.getElementById('i_pem').value,
+            customer: document.getElementById('i_cust').value,
+            pic: CURRENT_PIC
+          };
+          if(!data.plate || !data.workstation || !data.peminjam) {
+            Swal.showValidationMessage('Mohon lengkapi data wajib (Plat, WS, Peminjam)');
+            return false;
+          }
+          return data;
+        }
+      }).then((r) => {
+        if(r.isConfirmed) {
+          Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          
+          // Menggunakan POST ke Apps Script
+          const formData = new FormData();
+          formData.append('data', JSON.stringify(r.value));
+
+          fetch(`${API_URL}?action=submitData`, {
+            method: 'POST',
+            body: JSON.stringify(r.value)
+          })
+          .then(() => {
+            Swal.fire({ icon:'success', title:'Tersimpan', text:'Data berhasil di input.', timer: 2000 });
+            refreshSummary();
+          })
+          .catch(() => Swal.fire('Error', 'Gagal mengirim data. Pastikan CORS aktif di GAS.', 'error'));
+        }
+      });
+    }
+
+    function goToPage(page) {
+      window.location.href = `${API_URL}?page=${page}`;
+    }
+
+function goToDatabase() { 
+  window.location.href = "database.html"; 
+}
+    
+    // Fungsi Manual & Dev Info tetap sama karena hanya UI
+function showDevInfo() {
+    Swal.fire({
+    title: '<span class="text-blue-500 font-black italic uppercase tracking-tighter">Profile Pengembang</span>',
+    background: '#020617',
+    color: '#f8fafc',
+    width: '500px',
+    confirmButtonColor: '#2563eb',
+    confirmButtonText: 'TUTUP PROFIL',
+    html: `
+      <div class="flex flex-col items-center pt-4">
+        <div class="relative mb-6">
+          <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 p-1 shadow-2xl shadow-blue-500/20">
+            <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
+              <i class="fa-solid fa-user-tie text-4xl text-blue-500"></i>
+            </div>
+          </div>
+          <div class="absolute -bottom-1 -right-1 bg-green-500 w-5 h-5 rounded-full border-4 border-[#020617]"></div>
+        </div>
+
+        <h3 class="text-xl font-black tracking-tight text-white mb-1">DA. ROYADIE</h3>
+        <p class="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] mb-6">Fullstack Developer & System Architect</p>
+
+        <div class="w-full space-y-3 text-left border-t border-slate-800 pt-6">
+          <div class="flex items-center gap-4 group cursor-pointer" onclick="window.open('https://instagram.com/drrydii', '_blank')">
+            <div class="w-10 h-10 glass rounded-xl flex items-center justify-center group-hover:bg-pink-600/20 transition-all">
+              <i class="fa-brands fa-instagram text-pink-500 text-lg"></i>
+            </div>
+            <div>
+              <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Instagram</p>
+              <p class="text-xs font-bold text-slate-200 group-hover:text-pink-400 transition-colors">@drrydii</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4 group">
+            <div class="w-10 h-10 glass rounded-xl flex items-center justify-center group-hover:bg-blue-600/20 transition-all">
+              <i class="fa-solid fa-envelope text-blue-500 text-lg"></i>
+            </div>
+            <div>
+              <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Official Email</p>
+              <p class="text-xs font-bold text-slate-200">adm.dacmedia@gmail.com</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4 group">
+            <div class="w-10 h-10 glass rounded-xl flex items-center justify-center group-hover:bg-green-600/20 transition-all">
+              <i class="fa-brands fa-whatsapp text-green-500 text-lg"></i>
+            </div>
+            <div>
+              <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">WhatsApp Business</p>
+              <p class="text-xs font-bold text-slate-200">+62 822-2424-9299</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 p-4 bg-slate-900/40 rounded-2xl border border-slate-800 italic text-center w-full">
+          <p class="text-[9px] text-slate-400">"tidak ada manusia bodoh, yang ada hanya manusia pemalas."</p>
+        </div>
+      </div>
+    `
+  });
+}
+function showUserManual() {
+  Swal.fire({
+    title: '<span class="text-blue-500 font-black italic uppercase tracking-tighter">Petunjuk Operasional</span>',
+    background: '#020617',
+    color: '#f8fafc',
+    width: '600px',
+    confirmButtonColor: '#2563eb',
+    confirmButtonText: 'SAYA MENGERTI',
+    html: `
+      <div class="text-left space-y-4 text-xs leading-relaxed border-t border-slate-800 pt-4">
+        
+        <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+          <h4 class="text-blue-400 font-black uppercase mb-1 tracking-tighter flex items-center gap-2">
+            <i class="fa-solid fa-magnifying-glass"></i> 1. Pencarian & Tracking
+          </h4>
+          <p class="text-slate-400 font-medium">Masukkan Plat Nomor tanpa spasi (Contoh: <b class="text-white">B1234ABC</b>) pada kolom search. Sistem akan menampilkan status workstation terakhir dan histori pergerakan unit tersebut.</p>
+        </div>
+
+        <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+          <h4 class="text-emerald-400 font-black uppercase mb-1 tracking-tighter flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i> 2. Input Pergerakan Baru
+          </h4>
+          <p class="text-slate-400 font-medium">Gunakan tombol <b>INPUT</b> untuk mendaftarkan perpindahan unit. Pastikan mengisi <b class="text-white">Parking & Lot</b> dengan benar karena akan digabungkan otomatis sebagai lokasi penyimpanan.</p>
+        </div>
+
+        <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+          <h4 class="text-purple-400 font-black uppercase mb-1 tracking-tighter flex items-center gap-2">
+            <i class="fa-solid fa-sync"></i> 3. Real-Time Summary
+          </h4>
+          <p class="text-slate-400 font-medium">Dashboard summary di atas akan terupdate otomatis setiap <b>5 detik</b> (Live Sync). Angka mencerminkan jumlah unit yang sedang berada di tiap workstation.</p>
+        </div>
+
+        <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+          <h4 class="text-amber-400 font-black uppercase mb-1 tracking-tighter flex items-center gap-2">
+            <i class="fa-solid fa-database"></i> 4. Database Log
+          </h4>
+          <p class="text-slate-400 font-medium">Seluruh riwayat data tersimpan di <b>spreadsheet</b>. Anda dapat meninjau log lengkap melalui tombol database di sisi kanan kolom pencarian atau footer.</p>
+        </div>
+
+        <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+          <h4 class="text-amber-400 font-black uppercase mb-1 tracking-tighter flex items-center gap-2">
+            <i class="fa-solid fa-database"></i> 5. Analistik Data
+          </h4>
+          <p class="text-slate-400 font-medium">Melihat secara Visualisasi mengenai jumlah unit yang berada di setiap workstation (stasiun kerja) dan proporsinya terhadap total keseluruhan dalam bentuk grafik analistik.</p>
+        </div>
+
+        <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+          <h4 class="text-amber-400 font-black uppercase mb-1 tracking-tighter flex items-center gap-2">
+            <i class="fa-solid fa-database"></i> 6. Daily Analitics
+          </h4>
+          <p class="text-slate-400 font-medium">Melihat secara Visualisasi mengenai jumlah pergerakan unit setiap harinya. dan riwayat pergerakan unit pada hari yang sama.</p>
+        </div>
+
+      </div>
+    `
+  });
+}
+</script>
+</body>
+</html>
