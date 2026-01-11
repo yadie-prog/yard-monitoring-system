@@ -109,8 +109,16 @@
     window.onload = () => { 
       checkSession();
       refreshSummary();
-      setInterval(refreshSummary, 10000); // Diperpanjang ke 10 detik agar lebih hemat kuota API
-    };
+      let refreshTimer;
+function startAutoRefresh() {
+    // Hanya refresh jika tab sedang aktif (menghemat baterai & kuota)
+    refreshTimer = setInterval(() => {
+        if (!document.hidden) {
+            refreshSummary();
+        }
+    }, 15000); // Perpanjang ke 15 detik untuk efisiensi
+		}
+ };
 
     function checkSession() {
       const savedPic = localStorage.getItem("itc_pic_session");
@@ -123,6 +131,14 @@
       }
     }
 
+	function debounce(func, timeout = 500) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
+}
+	
 function handleLogin() {
       const name = document.getElementById("login-pic-name").value.trim().toUpperCase();
       const pass = document.getElementById("login-password").value;
