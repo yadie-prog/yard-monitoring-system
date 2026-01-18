@@ -1,0 +1,372 @@
+<html lang="id">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+.bg-itc { background-color: #1e293b; }
+    .swal2-input-custom { width: 95%; margin: 8px auto; padding: 12px; border: 1px solid #ccc; border-radius: 8px; display: block; font-size: 16px; }
+    #reader { width: 100%; border-radius: 15px; overflow: hidden; border: 2px solid #059669; margin-bottom: 15px; }
+    .status-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #22c55e; margin-right: 5px; animation: blink 1.5s infinite; }
+    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    #login-overlay { display: none; }
+    .glass-effect { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+    
+    @media (max-width: 640px) {
+      header { padding-top: 50px !important; }
+      .logout-btn { top: 10px !important; right: 10px !important; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+  <div id="login-overlay" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center">
+      <div class="mb-6">
+        <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-4">
+          <i class="fa fa-user-shield text-white text-3xl"></i>
+        </div>
+        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">SESI SECURITY TERKUNCI</h2>
+        <p class="text-slate-500 text-sm">Silahkan login untuk melanjutkan.</p>
+      </div>
+      
+      <div class="text-left mb-4">
+        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">NAMA YANG BERTUGAS</label>
+        <input type="text" id="login-pic-name" placeholder="NAMA ANDA..." class="w-full p-4 border-2 rounded-xl text-center font-bold uppercase outline-none focus:border-blue-500">
+      </div>
+
+      <div class="text-left mb-6">
+        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Password Security</label>
+        <input type="password" id="login-password" placeholder="••••••••" class="w-full p-4 border-2 rounded-xl text-center font-bold outline-none focus:border-blue-500">
+      </div>
+
+      <button onclick="handleLogin()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg active:scale-95 uppercase">Masuk Ke Sistem</button>
+      <p class="mt-6 text-[10px] text-slate-400 font-bold uppercase tracking-widest">&copy; 2026 | DAC Media Project - SECURITY PORTAL SYSTEM</p>
+    </div>
+  </div>
+
+  <header class="bg-emerald-900 text-white py-6 shadow-md text-center relative">
+    <div class="absolute right-4 top-4">
+      <button onclick="handleLogout()" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all border border-red-500/50">
+        <i class="fa fa-power-off"></i> Logout
+      </button>
+    </div>
+    <h2 class="text-xl font-black tracking-widest uppercase">SECURITY - INPUT SYSTEM</h2>
+    <div class="flex justify-center items-center gap-4 mt-2">
+       <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-tighter"><i class="fa fa-user-shield mr-1"></i>PETUGAS : <span id="display-pic-name">...</span></p>
+    </div>
+  </header>
+
+  <main class="flex-grow container mx-auto px-4 py-8">
+    <div class="max-w-xl mx-auto bg-white p-6 rounded-3xl shadow-xl border border-gray-100">
+      <h3 class="text-center font-black text-slate-700 mb-6 border-b pb-4 uppercase tracking-tighter">Form Input Pergerakan Unit</h3>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Plat Nomor</label>
+          <input id="i_plate" class="w-full p-4 border-2 rounded-xl text-center font-bold text-lg uppercase outline-none focus:border-emerald-500 bg-gray-50" placeholder="B 1234 XXX" oninput="this.value = this.value.replace(/\s/g, '').toUpperCase()">
+        </div>
+
+        <div class="bg-emerald-50 p-4 rounded-2xl border-2 border-emerald-100">
+          <label class="text-[10px] font-bold text-emerald-600 uppercase ml-2">Surat Jalan (Scan QR / Manual)</label>
+          <div class="flex gap-2 mb-3">
+            <input id="i_park" class="flex-1 p-4 border-2 rounded-xl text-center font-bold text-lg uppercase outline-none focus:border-emerald-500" placeholder="SCAN ATAU KETIK..." oninput="this.value = this.value.replace(/\s/g, '').toUpperCase()">
+            <button onclick="toggleScanner()" class="bg-emerald-600 text-white px-6 rounded-xl hover:bg-emerald-700 transition shadow-md active:scale-95">
+              <i class="fa fa-qrcode text-xl"></i>
+            </button>
+          </div>
+          <div id="reader" class="hidden mb-4"></div>
+        </div>
+
+        <input type="hidden" id="i_lot" value="-">
+
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Workstation</label>
+          <select id="i_ws" class="w-full p-4 border-2 rounded-xl font-bold uppercase outline-none focus:border-emerald-500 bg-gray-50">
+              <option value="">-- Pilih Aktivitas --</option>
+                        <option>Stock In</option><option>Sold</option>
+                        <option>Test Drive Out</option><option>Test Drive In</option>
+                        <option>Body & Paint Out</option><option>Body & Paint In</option>
+                        <option>Out To PIO</option><option>In From PIO</option>
+                        <option>Out To Wismul</option><option>In From Wismul</option>
+                        <option>Rental Out</option><option>Rental In</option>
+                        <option>Courtesy Out</option><option>Courtesy In</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Fuel (BBM)</label>
+          <select id="i_fuel" class="w-full p-4 border-2 rounded-xl font-bold uppercase outline-none focus:border-emerald-500 bg-gray-50">
+            <option value="">-- BBM --</option>
+            <option>10%</option><option>20%</option><option>30%</option><option>40%</option><option>50%</option>
+            <option>60%</option><option>70%</option><option>80%</option><option>90%</option><option>100%</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Driver</label>
+            <input id="i_pem" class="w-full p-4 border-2 rounded-xl font-bold uppercase outline-none focus:border-emerald-500 bg-gray-50" placeholder="Nama Driver">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Customer</label>
+            <input id="i_cust" class="w-full p-4 border-2 rounded-xl font-bold uppercase outline-none focus:border-emerald-500 bg-gray-50" placeholder="Nama Customer">
+          </div>
+        </div>
+
+        <button onclick="submitSecurityData()" class="w-full bg-emerald-600 text-white font-black py-5 rounded-2xl hover:bg-emerald-700 transition uppercase shadow-xl active:scale-95 text-lg mt-4">
+          <i class="fa fa-save mr-2"></i> Simpan Data Ke Sistem
+        </button>
+      </div>
+    </div>
+    <div class="max-w-xl mx-auto mt-8">
+  <div class="flex items-center justify-between mb-4 px-2">
+    <h3 class="font-black text-slate-700 uppercase tracking-tighter text-sm">
+      <i class="fa fa-history mr-2"></i>History Input 
+    </h3>
+    <button onclick="clearLocalHistory()" class="text-[10px] font-bold text-red-500 uppercase hover:underline">
+      Hapus History
+    </button>
+  </div>
+  <div id="local-history-list" class="space-y-3">
+    </div>
+</div>
+  </main>
+
+  <footer class="py-6 text-center text-slate-400">
+    <p class="text-[10px] font-bold uppercase tracking-widest">&copy; 2026 DAC MEDIA PROJECT | SECURITY PORTAL v1.8</p>
+  </footer>
+
+  <script>
+ const API_URL = "https://script.google.com/macros/s/AKfycbzz_X44n_IK_CQTwooL4h3Qw3oKcDciANE7AdvflIW_kBSRYxMQz0TEa3g7A00Vy6UbEA/exec";
+
+    let CURRENT_PIC = "";
+    let html5QrCode;
+
+   window.onload = () => {
+  checkSession();
+  renderHistory();
+};
+
+    function checkSession() {
+      const savedPic = localStorage.getItem("itc_pic_session");
+      if (!savedPic) {
+        document.getElementById("login-overlay").style.display = "flex";
+      } else {
+        CURRENT_PIC = savedPic;
+        document.getElementById("display-pic-name").innerText = CURRENT_PIC;
+        document.getElementById("login-overlay").style.display = "none";
+      }
+    }
+
+function handleLogin() {
+      const name = document.getElementById("login-pic-name").value.trim().toUpperCase();
+      const pass = document.getElementById("login-password").value;
+      
+      // Validasi Input Kosong
+      if (!name) return Swal.fire('Error', 'Nama PIC wajib diisi!', 'error');
+      if (!pass) return Swal.fire('Error', 'Password wajib diisi!', 'error');
+      
+      // Cek Password
+      if (pass === "hsm2026") {
+        localStorage.setItem("itc_pic_session", name);
+        checkSession();
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Login Berhasil: ' + name,
+          showConfirmButton: false,
+          timer: 3000
+        });
+      } else {
+        Swal.fire('Akses Ditolak', 'Password yang Anda masukkan salah!', 'error');
+      }
+    }
+
+function handleLogout() {
+  Swal.fire({
+    title: 'Logout..?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, Keluar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.removeItem("itc_pic_session");
+      location.reload(); 
+    }
+  });
+}
+function toggleScanner() {
+  const readerDiv = document.getElementById('reader');
+  if (html5QrCode && html5QrCode.isScanning) {
+    stopScanner();
+    return;
+  }
+  readerDiv.classList.remove('hidden');
+  html5QrCode = new Html5Qrcode("reader");
+  
+  html5QrCode.start(
+    { facingMode: "environment" }, 
+    { fps: 10, qrbox: 250 },
+    (decodedText) => {
+      document.getElementById('i_park').value = decodedText.toUpperCase();
+      stopScanner(); 
+      Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'QR Terbaca', timer: 1000, showConfirmButton: false });
+    },
+    (errorMessage) => {}
+  );
+}
+
+function submitSecurityData() {
+  const data = {
+    plate: document.getElementById('i_plate').value.trim().toUpperCase(),
+    parking: document.getElementById('i_park').value,
+    lot: "-", 
+    workstation: document.getElementById('i_ws').value,
+    fuel: document.getElementById('i_fuel').value,
+    peminjam: document.getElementById('i_pem').value,
+    customer: document.getElementById('i_cust').value,
+    pic: CURRENT_PIC,
+    timestamp: new Date().toLocaleString('id-ID')
+  };
+
+  if(!data.plate || !data.workstation || !data.parking) {
+    return Swal.fire('Peringatan', 'Data wajib belum lengkap!', 'warning');
+  }
+
+
+  saveToLocalHistory(data);
+  
+  const inputs = ['i_plate', 'i_park', 'i_ws', 'i_fuel', 'i_pem', 'i_cust'];
+  inputs.forEach(id => document.getElementById(id).value = "");
+  if (html5QrCode) stopScanner();
+
+
+  fetch(API_URL, {
+    method: 'POST',
+    mode: 'no-cors', 
+    body: JSON.stringify(data)
+  });
+
+  Swal.fire({ 
+    icon: 'success', 
+    title: 'Data Diproses', 
+    text: 'Data disimpan di history lokal & sedang dikirim ke cloud.',
+    timer: 1500, 
+    showConfirmButton: false 
+  });
+}
+
+function saveToLocalHistory(newData) {
+  let history = JSON.parse(localStorage.getItem("itc_history_device") || "[]");
+  history.unshift(newData);
+  history = history.slice(0, 10);
+  localStorage.setItem("itc_history_device", JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const history = JSON.parse(localStorage.getItem("itc_history_device") || "[]");
+  const container = document.getElementById('local-history-list');
+  
+  if (history.length === 0) {
+    container.innerHTML = `<p class="text-center text-gray-400 text-xs italic">Belum ada history input.</p>`;
+    return;
+  }
+
+  container.innerHTML = history.map((item, index) => `
+    <div onclick="showHistoryDetail(${index})" class="cursor-pointer bg-white p-4 rounded-2xl shadow-sm border-l-4 border-emerald-500 flex justify-between items-center animate-fade-in hover:bg-emerald-50 transition active:scale-95">
+      <div>
+        <div class="text-sm font-black text-slate-800">${item.plate}</div>
+        <div class="text-[10px] text-gray-500 font-bold uppercase">${item.workstation} | ${item.parking}</div>
+        <div class="text-[9px] text-gray-400 mt-1">${item.timestamp}</div>
+      </div>
+      <div class="text-right">
+        <span class="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-1 rounded-md font-bold uppercase">Detail <i class="fa fa-chevron-right ml-1"></i></span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function clearLocalHistory() {
+  Swal.fire({
+    title: 'Hapus History?',
+    text: "Hanya menghapus tampilan di device ini, data di Cloud tetap aman.",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, Hapus'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.removeItem("itc_history_device");
+      renderHistory();
+    }
+  });
+}
+
+    function showHistoryDetail(index) {
+  const history = JSON.parse(localStorage.getItem("itc_history_device") || "[]");
+  const data = history[index];
+
+  if (!data) return;
+
+  const contentHtml = `
+    <div class="text-left text-sm space-y-3">
+      
+      <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-center mb-4">
+        <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Plat Nomor</span>
+        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tighter">${data.plate}</h2>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-gray-50 p-2 rounded-lg border">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase">Aktivitas (WS)</label>
+          <span class="font-bold text-slate-700 uppercase text-xs">${data.workstation}</span>
+        </div>
+        <div class="bg-gray-50 p-2 rounded-lg border">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase">Surat Jalan / Park</label>
+          <span class="font-bold text-slate-700 uppercase text-xs">${data.parking}</span>
+        </div>
+        <div class="bg-gray-50 p-2 rounded-lg border">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase">Bahan Bakar</label>
+          <span class="font-bold text-slate-700 uppercase text-xs">${data.fuel || "-"}</span>
+        </div>
+        <div class="bg-gray-50 p-2 rounded-lg border">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase">PIC Input</label>
+          <span class="font-bold text-slate-700 uppercase text-xs">${data.pic}</span>
+        </div>
+      </div>
+
+      <div class="border-t pt-2 mt-2">
+         <div class="flex justify-between mb-1">
+            <span class="text-[10px] font-bold text-gray-400 uppercase">Driver</span>
+            <span class="text-[10px] font-bold text-slate-700 uppercase text-right">${data.peminjam || "-"}</span>
+         </div>
+         <div class="flex justify-between">
+            <span class="text-[10px] font-bold text-gray-400 uppercase">Customer</span>
+            <span class="text-[10px] font-bold text-slate-700 uppercase text-right">${data.customer || "-"}</span>
+         </div>
+      </div>
+      
+      <div class="text-center mt-4">
+        <span class="text-[9px] text-gray-400 italic">Waktu Input: ${data.timestamp}</span>
+      </div>
+
+    </div>
+  `;
+
+  Swal.fire({
+    title: '<span class="uppercase font-black text-slate-600 text-lg"><i class="fa fa-info-circle mr-2"></i>Detail Data</span>',
+    html: contentHtml,
+    showCloseButton: true,
+    showConfirmButton: false, 
+    customClass: {
+      popup: 'rounded-3xl'
+    }
+  });
+}
+  </script>
+</body>
+</html>
