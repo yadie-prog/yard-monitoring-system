@@ -1,230 +1,254 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ITC Yard Monitoring - Input</title>
-    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ITC Yard Monitoring System</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    .bg-itc { background-color: #1e293b; }
+    .swal2-input-custom { width: 95%; margin: 8px auto; padding: 12px; border: 1px solid #ccc; border-radius: 8px; display: block; font-size: 16px; background: white; color: black; }
+    .status-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #22c55e; margin-right: 5px; animation: blink 1.5s infinite; }
+    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    #login-overlay { display: none; }
     
-    <style>
-        :root {
-            --bg: #0d1117;
-            --glass: rgba(255, 255, 255, 0.03);
-            --accent: #58a6ff;
-            --success: #238636;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: #c9d1d9;
-            margin: 0;
-            padding: 15px;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 450px;
-            background: var(--glass);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            align-self: start;
-            margin-top: 20px;
-        }
-
-        h2 { text-align: center; color: white; font-weight: 700; margin-bottom: 30px; letter-spacing: 1px; }
-
-        .input-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #8b949e; }
-        
-        input, select {
-            width: 100%;
-            padding: 14px;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            color: white;
-            box-sizing: border-box;
-            outline: none;
-            font-size: 1rem;
-        }
-
-        input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(88,166,255,0.2); }
-
-        button {
-            width: 100%;
-            padding: 16px;
-            border-radius: 10px;
-            border: none;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-top: 12px;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-        }
-
-        .btn-auth { background: #ffffff; color: #000; }
-        .btn-save { background: var(--success); color: white; }
-        .btn-sync { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
-        button:active { transform: scale(0.98); }
-
-        .status-area {
-            margin-top: 25px;
-            padding: 15px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 10px;
-            text-align: center;
-            font-size: 0.8rem;
-        }
-
-        #localCount { font-weight: bold; color: var(--accent); }
-        .loader { color: var(--accent); font-style: italic; display: none; }
-    </style>
+    @media (max-width: 640px) {
+      header { padding-top: 50px !important; }
+      .logout-btn { top: 10px !important; right: 10px !important; }
+    }
+  </style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen flex flex-col">
 
-<div class="container">
-    <h2>YARD MONITOR</h2>
-    
-    <div id="auth-section">
-        <p style="text-align: center; font-size: 0.9rem; margin-bottom: 20px;">Silahkan login untuk sinkronisasi ke Spreadsheet.</p>
-        <button class="btn-auth" onclick="handleAuthClick()">Login Google</button>
-    </div>
-
-    <div id="form-section" style="display:none;">
-        <div class="input-group">
-            <label>Nomor Unit / Item</label>
-            <input type="text" id="unitName" placeholder="Masukkan nama unit...">
+  <div id="login-overlay" class="fixed inset-0 z- bg-slate-900 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center">
+      <div class="mb-6">
+        <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-4">
+          <i class="fa fa-user-shield text-white text-3xl"></i>
         </div>
-        <div class="input-group">
-            <label>Status / Keterangan</label>
-            <input type="text" id="keterangan" placeholder="Contoh: Washing, PDI, Ready...">
-        </div>
-        
-        <button class="btn-save" onclick="saveData()">Simpan ke HP</button>
-        <button class="btn-sync" onclick="syncData()">Sinkronkan ke Cloud</button>
+        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Sesi TERKUNCI</h2>
+      </div>
+      <div class="text-left mb-4">
+        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Nama PIC</label>
+        <input type="text" id="login-pic-name" placeholder="NAMA ANDA..." class="w-full p-4 border-2 rounded-xl text-center font-bold uppercase outline-none focus:border-blue-500">
+      </div>
+      <div class="text-left mb-6">
+        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" class="w-full p-4 border-2 rounded-xl text-center font-bold outline-none focus:border-blue-500">
+      </div>
+      <button onclick="handleLogin()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg uppercase">Masuk</button>
     </div>
+  </div>
 
-    <div class="status-area">
-        <div id="status-text">Antrean Lokal: <span id="localCount">0</span> unit</div>
-        <div id="loader" class="loader">Proses Sinkronisasi...</div>
+  <header class="bg-itc text-white py-6 shadow-md text-center relative">
+    <div class="absolute right-4 top-4">
+      <button onclick="handleLogout()" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white px-3 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 border border-red-500/50">
+        <i class="fa fa-power-off"></i> Logout
+      </button>
     </div>
-</div>
+    <h2 class="text-xl font-black tracking-widest uppercase">ITC YARD MONITORING</h2>
+    <div class="flex justify-center items-center gap-4 mt-2">
+       <p class="text-[10px] opacity-70"><span class="status-indicator"></span> ONLINE</p>
+       <p class="text-[10px] font-bold text-blue-400 uppercase"><i class="fa fa-user mr-1"></i><span id="display-pic-name">...</span></p>
+    </div>
+  </header>
+
+  <main class="flex-grow container mx-auto px-4 py-8">
+    <div id="summary-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 mb-8 text-center"></div>
+
+    <div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+      <input type="text" id="plateSearch" placeholder="CARI PLAT NOMOR..." class="w-full p-4 border-2 rounded-xl mb-4 text-center font-bold text-lg uppercase outline-none focus:border-blue-500 shadow-inner">
+      <div class="flex gap-2 mb-4">
+        <button onclick="handleSearch()" class="flex-1 bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition uppercase shadow-md">Search</button>		  
+        <button onclick="goToDatabase()" class="bg-gray-800 text-white px-6 rounded-xl hover:bg-black transition shadow-md"><i class="fa fa-database"></i></button>
+      </div>
+      <button onclick="showInputForm()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 transition uppercase shadow-md mb-2">
+        <i class="fa fa-plus-circle mr-2"></i>Input DATA Baru
+      </button>
+      
+      <div id="sync-status" class="hidden mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex justify-between items-center">
+        <p class="text-[10px] font-bold text-amber-700 uppercase"><i class="fa fa-cloud-upload mr-2"></i><span id="queue-count">0</span> Data Menunggu Sinkronisasi</p>
+        <button onclick="syncData()" class="bg-amber-600 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase">Sync Sekarang</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="py-6 text-center text-slate-500">
+    <p class="text-[10px] font-bold uppercase tracking-widest">&copy; 2026 DA. ROYADIE</p>
+  </footer>
 
 <script>
-    // --- KONFIGURASI SESUAI DATA ANDA ---
-    const CLIENT_ID = '178166469747-8h708mugebsmfcqm1np97ln8kvflc2qu.apps.googleusercontent.com';
-    const SPREADSHEET_ID = '1oymMo6WnoRAoFEY-V2cwe4OF5hBaibg1atgxyWn5Z2k';
-    const SHEET_NAME = 'Master Data per unit'; // Nama Tab sesuai permintaan
-    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
-    
-    let accessToken = null;
-    let tokenClient;
+    const API_URL = "https://script.google.com/macros/s/AKfycbzKnrP3KIq-wvGcw5CDUZ_an0JcAy2DPpWqLGBCLhWQReuGXu2qBU4vAvqz34adITQl/exec";
+    let CURRENT_PIC = "";
 
-    // --- DATABASE LOKAL (DEXIE) ---
+    // -- DATABASE LOKAL (DEXIE) --
     const db = new Dexie("ITC_Yard_DB");
     db.version(1).stores({
-        queue: '++id, unit, ket, time'
+        pendingLogs: '++id, plate, workstation, pic, timestamp'
     });
 
-    // --- INISIALISASI ---
-    window.onload = () => {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: SCOPES,
-            callback: (tokenResponse) => {
-                accessToken = tokenResponse.access_token;
-                document.getElementById('auth-section').style.display = 'none';
-                document.getElementById('form-section').style.display = 'block';
-                updateUI();
-            },
-        });
-        updateUI();
+    window.onload = () => { 
+      checkSession();
+      refreshSummary();
+      updateQueueCount();
+      setInterval(() => { if (!document.hidden) refreshSummary(); }, 15000);
     };
 
-    function handleAuthClick() {
-        tokenClient.requestAccessToken({prompt: 'none'}); 
+    function checkSession() {
+      const savedPic = localStorage.getItem("itc_pic_session");
+      if (!savedPic) {
+        document.getElementById("login-overlay").style.display = "flex";
+      } else {
+        CURRENT_PIC = savedPic;
+        document.getElementById("display-pic-name").innerText = CURRENT_PIC;
+        document.getElementById("login-overlay").style.display = "none";
+      }
     }
 
-    // --- SIMPAN KE MEMORI HP ---
-    async function saveData() {
-        const unit = document.getElementById('unitName').value;
-        const ket = document.getElementById('keterangan').value;
-
-        if (!unit) return alert("Nomor Unit wajib diisi!");
-
-        await db.queue.add({
-            unit: unit,
-            ket: ket,
-            time: new Date().toLocaleString('id-ID')
-        });
-
-        document.getElementById('unitName').value = "";
-        document.getElementById('keterangan').value = "";
-        updateUI();
-        alert("Data tersimpan di antrean lokal.");
+    function handleLogin() {
+      const name = document.getElementById("login-pic-name").value.trim().toUpperCase();
+      const pass = document.getElementById("login-password").value;
+      if (pass === "itc2026") {
+        localStorage.setItem("itc_pic_session", name);
+        location.reload();
+      } else {
+        Swal.fire('Error', 'Password Salah!', 'error');
+      }
     }
 
-    async function updateUI() {
-        const count = await db.queue.count();
-        document.getElementById('localCount').innerText = count;
+    function handleLogout() {
+      localStorage.removeItem("itc_pic_session");
+      location.reload();
     }
 
-    // --- KIRIM KE GOOGLE SPREADSHEET ---
+    async function updateQueueCount() {
+      const count = await db.pendingLogs.count();
+      const el = document.getElementById('sync-status');
+      if(count > 0) {
+        el.classList.remove('hidden');
+        document.getElementById('queue-count').innerText = count;
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
+    // -- FUNGSI INPUT DATA (Simpan ke HP dulu) --
+    function showInputForm() {
+      Swal.fire({
+        title: 'INPUT DATA YARD',
+        confirmButtonText: 'SIMPAN KE HP',
+        showCancelButton: true,
+        html: `
+          <input id="i_plate" class="swal2-input-custom" placeholder="PLAT NOMOR" oninput="this.value = this.value.replace(/\\s/g, '').toUpperCase()">
+          <select id="i_ws" class="swal2-input-custom">
+            <option value="">-- Workstation --</option>
+            <option>Inbound Check</option><option>Washing</option><option>PDI</option>
+            <option>Ready to Party</option><option>Display Area</option>
+          </select>
+          <input id="i_pem" class="swal2-input-custom" placeholder="PEMINJAM / DRIVER">
+        `,
+        preConfirm: () => {
+          const data = {
+            plate: document.getElementById('i_plate').value.replace(/\s/g, '').toUpperCase(),
+            workstation: document.getElementById('i_ws').value,
+            peminjam: document.getElementById('i_pem').value,
+            pic: CURRENT_PIC,
+            timestamp: new Date().toLocaleString('id-ID')
+          };
+          if(!data.plate || !data.workstation) {
+            Swal.showValidationMessage('Lengkapi Plat & Workstation!');
+            return false;
+          }
+          return data;
+        }
+      }).then(async (r) => {
+        if(r.isConfirmed) {
+          // SIMPAN KE DATABASE LOKAL
+          await db.pendingLogs.add(r.value);
+          updateQueueCount();
+          
+          Swal.fire({
+            title: 'Tersimpan di Lokal',
+            text: 'Data aman di HP. Mencoba sinkronisasi ke Cloud...',
+            icon: 'info',
+            timer: 2000,
+            showConfirmButton: false
+          });
+          
+          // Langsung coba sinkronkan
+          syncData();
+        }
+      });
+    }
+
+    // -- FUNGSI SINKRONISASI (Kirim ke Cloud) --
     async function syncData() {
-        if (!accessToken) {
-            alert("Sesi habis. Silahkan login kembali.");
-            return handleAuthClick();
+      const allData = await db.pendingLogs.toArray();
+      if(allData.length === 0) return;
+
+      for (const item of allData) {
+        try {
+          const response = await fetch(`${API_URL}?action=submitData`, {
+            method: 'POST',
+            mode: 'no-cors', // Penting jika GAS tidak set CORS
+            body: JSON.stringify(item)
+          });
+
+          // Karena no-cors tidak bisa baca response, kita asumsikan sukses jika fetch tidak error
+          // Atau lebih baik pakai status return jika GAS anda mendukung CORS
+          await db.pendingLogs.delete(item.id);
+        } catch (e) {
+          console.error("Gagal sinkron ID:", item.id);
         }
-        
-        const allData = await db.queue.toArray();
-        if (allData.length === 0) return alert("Tidak ada data untuk dikirim.");
-
-        document.getElementById('loader').style.display = 'block';
-        let successCount = 0;
-
-        for (const item of allData) {
-            try {
-                // Menentukan range ke tab 'Master Data per unit'
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/'${SHEET_NAME}'!A1:append?valueInputOption=USER_ENTERED`;
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        values: [[item.time, item.unit, item.ket]]
-                    })
-                });
-
-                if (response.ok) {
-                    await db.queue.delete(item.id);
-                    successCount++;
-                }
-            } catch (err) {
-                console.error("Gagal mengirim ID:", item.id);
-            }
-        }
-
-        document.getElementById('loader').style.display = 'none';
-        updateUI();
-        if (successCount > 0) {
-            alert(`${successCount} data berhasil disinkronkan ke Spreadsheet!`);
-        } else {
-            alert("Sinkronisasi gagal. Periksa koneksi internet.");
-        }
+      }
+      updateQueueCount();
+      refreshSummary();
     }
+
+    function refreshSummary() {
+      fetch(`${API_URL}?action=getSummary`)
+        .then(res => res.json())
+        .then(data => renderSummary(data))
+        .catch(e => console.log("Offline / Error Summary"));
+    }
+
+    function renderSummary(data) {
+      const labels = [
+        {key:'ready', label:'READY', col:'bg-green-600', search:'ready to party'},
+        {key:'washing', label:'WASHING', col:'bg-cyan-500', search:'washing'},
+        {key:'pdi', label:'PDI', col:'bg-pink-500', search:'pdi'},
+        {key:'display', label:'DISPLAY', col:'bg-orange-500', search:'display area'}
+      ];
+      document.getElementById('summary-grid').innerHTML = labels.map(i => `
+        <div class="${i.col} text-white p-3 rounded-xl shadow-lg">
+          <p class="text-[9px] font-black uppercase opacity-80">${i.label}</p>
+          <h3 class="text-xl font-black">${data[i.key] || 0}</h3>
+        </div>
+      `).join('');
+    }
+
+    function handleSearch() {
+      const plate = document.getElementById('plateSearch').value.trim().replace(/\s/g, '').toUpperCase();
+      if(!plate) return;
+      Swal.fire({ title: 'Searching...', didOpen: () => Swal.showLoading() });
+      fetch(`${API_URL}?action=searchPlate&plate=${plate}`)
+        .then(res => res.json())
+        .then(data => {
+          Swal.close();
+          if(!data.latest) return Swal.fire('Not Found', 'Data tidak ada', 'info');
+          Swal.fire({
+            title: `PLAT: ${data.latest}`,
+            html: `<div class="text-left text-sm"><b>WS:</b> ${data.latest}<br><b>PIC:</b> ${data.latest}</div>`
+          });
+        });
+    }
+
+    function goToDatabase() { window.location.href = "database.html"; }
 </script>
 </body>
 </html>
