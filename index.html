@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ITC Yard Monitoring System</title>
+  <title>Security Portal - ITC Yard</title>
   
-  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+  
   <style>
     .bg-itc { background-color: #1e293b; }
-    .swal2-input-custom { width: 95%; margin: 8px auto; padding: 12px; border: 1px solid #ccc; border-radius: 8px; display: block; font-size: 16px; background: white; color: black; }
+    .swal2-input-custom { width: 95%; margin: 8px auto; padding: 12px; border: 1px solid #ccc; border-radius: 12px; display: block; font-size: 16px; background: #f9fafb; transition: 0.3s; }
+    .swal2-input-custom:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); outline: none; }
     .status-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #22c55e; margin-right: 5px; animation: blink 1.5s infinite; }
     @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     #login-overlay { display: none; }
@@ -23,232 +24,275 @@
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
+<body class="bg-gray-50 min-h-screen flex flex-col">
 
   <div id="login-overlay" class="fixed inset-0 z- bg-slate-900 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 text-center">
       <div class="mb-6">
-        <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-4">
-          <i class="fa fa-user-shield text-white text-3xl"></i>
+        <div class="w-20 h-20 bg-emerald-600 rounded-3xl mx-auto flex items-center justify-center shadow-lg mb-4 transform rotate-3">
+          <i class="fa fa-shield-alt text-white text-3xl"></i>
         </div>
-        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Sesi TERKUNCI</h2>
+        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">SECURITY ACCESS</h2>
+        <p class="text-slate-500 text-xs mt-1">Gunakan kredensial petugas untuk akses portal</p>
       </div>
-      <div class="text-left mb-4">
-        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Nama PIC</label>
-        <input type="text" id="login-pic-name" placeholder="NAMA ANDA..." class="w-full p-4 border-2 rounded-xl text-center font-bold uppercase outline-none focus:border-blue-500">
+      
+      <div class="space-y-4">
+        <div class="text-left">
+          <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Username PIC</label>
+          <input type="text" id="login-pic-name" placeholder="NAMA PETUGAS..." class="w-full p-4 border-2 rounded-2xl text-center font-bold uppercase outline-none focus:border-emerald-500">
+        </div>
+        <div class="text-left">
+          <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" class="w-full p-4 border-2 rounded-2xl text-center font-bold outline-none focus:border-emerald-500">
+        </div>
+        <button onclick="handleLogin()" class="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-emerald-700 transition shadow-lg uppercase active:scale-95">Verifikasi & Masuk</button>
       </div>
-      <div class="text-left mb-6">
-        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Password</label>
-        <input type="password" id="login-password" placeholder="••••••••" class="w-full p-4 border-2 rounded-xl text-center font-bold outline-none focus:border-blue-500">
-      </div>
-      <button onclick="handleLogin()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg uppercase">Masuk</button>
+      <p class="mt-8 text-[9px] text-slate-400 font-bold uppercase tracking-widest">&copy; 2026 DAC MEDIA | SECURITY v1.85</p>
     </div>
   </div>
 
-  <header class="bg-itc text-white py-6 shadow-md text-center relative">
-    <div class="absolute right-4 top-4">
-      <button onclick="handleLogout()" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white px-3 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 border border-red-500/50">
-        <i class="fa fa-power-off"></i> Logout
+  <header class="bg-emerald-900 text-white py-6 shadow-xl text-center relative rounded-b-[40px]">
+    <div class="absolute right-6 top-6">
+      <button onclick="handleLogout()" class="bg-red-500/20 hover:bg-red-500 text-red-100 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all border border-red-500/30">
+        <i class="fa fa-power-off"></i>
       </button>
     </div>
-    <h2 class="text-xl font-black tracking-widest uppercase">ITC YARD MONITORING</h2>
+    <h2 class="text-lg font-black tracking-[0.2em] uppercase">OPERATOR SYSTEM</h2>
     <div class="flex justify-center items-center gap-4 mt-2">
-       <p class="text-[10px] opacity-70"><span class="status-indicator"></span> ONLINE</p>
-       <p class="text-[10px] font-bold text-blue-400 uppercase"><i class="fa fa-user mr-1"></i><span id="display-pic-name">...</span></p>
+       <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-tighter bg-emerald-950/50 px-4 py-1.5 rounded-full border border-emerald-800">
+         <span class="status-indicator"></span> PIC : <span id="display-pic-name">...</span>
+       </p>
     </div>
   </header>
 
   <main class="flex-grow container mx-auto px-4 py-8">
-    <div id="summary-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 mb-8 text-center"></div>
-
-    <div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
-      <input type="text" id="plateSearch" placeholder="CARI PLAT NOMOR..." class="w-full p-4 border-2 rounded-xl mb-4 text-center font-bold text-lg uppercase outline-none focus:border-blue-500 shadow-inner">
-      <div class="flex gap-2 mb-4">
-        <button onclick="handleSearch()" class="flex-1 bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition uppercase shadow-md">Search</button>		  
-        <button onclick="goToDatabase()" class="bg-gray-800 text-white px-6 rounded-xl hover:bg-black transition shadow-md"><i class="fa fa-database"></i></button>
-      </div>
-      <button onclick="showInputForm()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 transition uppercase shadow-md mb-2">
-        <i class="fa fa-plus-circle mr-2"></i>Input DATA Baru
-      </button>
+    <div class="max-w-xl mx-auto bg-white p-6 rounded-[32px] shadow-2xl border border-gray-100">
+      <h3 class="text-center font-black text-slate-800 mb-6 border-b pb-4 uppercase tracking-tighter text-sm">Input Pergerakan Unit</h3>
       
-      <div id="sync-status" class="hidden mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex justify-between items-center">
-        <p class="text-[10px] font-bold text-amber-700 uppercase"><i class="fa fa-cloud-upload mr-2"></i><span id="queue-count">0</span> Data Menunggu Sinkronisasi</p>
-        <button onclick="syncData()" class="bg-amber-600 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase">Sync Sekarang</button>
+      <div class="space-y-4">
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase ml-2 mb-1 block">Unit Identitas (Plat Nomor)</label>
+          <input id="i_plate" class="swal2-input-custom !m-0" placeholder="B1234XXX" oninput="this.value = this.value.replace(/\\s/g, '').toUpperCase()">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase ml-2 mb-1 block">Lokasi Parkir</label>
+            <select id="i_park" class="swal2-input-custom !m-0">
+              <option value="">-- Lokasi --</option>
+              <option>A1</option><option>A2</option><option>B1</option><option>B2</option>
+              <option>PDI Area</option><option>Washing Area</option><option>Customer Area</option><option>PARALEL</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase ml-2 mb-1 block">Workstation</label>
+            <select id="i_ws" class="swal2-input-custom !m-0">
+              <option value="">-- Proses --</option>
+              <option>Inbound Check</option><option>Washing</option><option>PDI</option><option>Ready to Party</option><option>Hand Over</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase ml-2 mb-1 block">Bahan Bakar</label>
+            <select id="i_fuel" class="swal2-input-custom !m-0">
+              <option value="">-- BBM --</option>
+              <option>10%</option><option>30%</option><option>50%</option><option>70%</option><option>100%</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase ml-2 mb-1 block">Driver / Peminjam</label>
+            <input id="i_pem" class="swal2-input-custom !m-0" placeholder="NAMA DRIVER">
+          </div>
+        </div>
+
+        <button onclick="saveAndSync()" class="w-full bg-emerald-600 text-white font-black py-5 rounded-[20px] hover:bg-emerald-700 transition shadow-xl active:scale-95 text-lg mt-4 flex justify-center items-center gap-3">
+          <i class="fa fa-cloud-upload-alt"></i> SIMPAN & SINKRON
+        </button>
       </div>
+    </div>
+
+    <div class="max-w-xl mx-auto mt-10 px-2">
+      <div id="sync-alert" class="hidden mb-6 p-4 bg-amber-50 border-2 border-amber-200 rounded-2xl flex justify-between items-center animate-bounce">
+        <div>
+          <p class="text-[10px] font-black text-amber-800 uppercase">⚠️ Data Tertunda</p>
+          <p class="text-[9px] text-amber-600 font-bold"><span id="queue-count">0</span> data gagal kirim karena sinyal.</p>
+        </div>
+        <button onclick="syncData()" class="bg-amber-600 text-white px-4 py-2 rounded-xl text-[10px] font-black">ULANGI SINKRON</button>
+      </div>
+
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-black text-slate-800 uppercase tracking-tighter text-sm">Aktivitas Terbaru</h3>
+        <button onclick="clearHistory()" class="text-[9px] font-black text-red-500 uppercase">Bersihkan Log</button>
+      </div>
+      <div id="history-list" class="space-y-3"></div>
     </div>
   </main>
 
-  <footer class="py-6 text-center text-slate-500">
-    <p class="text-[10px] font-bold uppercase tracking-widest">&copy; 2026 DA. ROYADIE</p>
+  <footer class="py-10 text-center text-slate-400">
+    <p class="text-[9px] font-bold uppercase tracking-[0.3em]">&copy; 2026 DAC MEDIA | SECURE PORTAL</p>
   </footer>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzKnrP3KIq-wvGcw5CDUZ_an0JcAy2DPpWqLGBCLhWQReuGXu2qBU4vAvqz34adITQl/exec";
+    // Konfigurasi
+    const API_URL = "https://script.google.com/macros/s/AKfycbzz_X44n_IK_CQTwooL4h3Qw3oKcDciANE7AdvflIW_kBSRYxMQz0TEa3g7A00Vy6UbEA/exec";
     let CURRENT_PIC = "";
 
-    // -- DATABASE LOKAL (DEXIE) --
-    const db = new Dexie("ITC_Yard_DB");
+    // -- INISIALISASI DATABASE (Dexie) --
+    const db = new Dexie("SecurityDB");
     db.version(1).stores({
-        pendingLogs: '++id, plate, workstation, pic, timestamp'
+        logs: '++id, plate, workstation, pic, timestamp, isSynced'
     });
 
-    window.onload = () => { 
-      checkSession();
-      refreshSummary();
-      updateQueueCount();
-      setInterval(() => { if (!document.hidden) refreshSummary(); }, 15000);
+    window.onload = () => {
+        checkSession();
+        renderHistory();
+        syncData(); // Coba sync sisa data saat buka aplikasi
     };
 
     function checkSession() {
-      const savedPic = localStorage.getItem("itc_pic_session");
-      if (!savedPic) {
-        document.getElementById("login-overlay").style.display = "flex";
-      } else {
-        CURRENT_PIC = savedPic;
-        document.getElementById("display-pic-name").innerText = CURRENT_PIC;
-        document.getElementById("login-overlay").style.display = "none";
-      }
+        const savedPic = localStorage.getItem("itc_pic_session");
+        if (!savedPic) {
+            document.getElementById("login-overlay").style.display = "flex";
+        } else {
+            CURRENT_PIC = savedPic;
+            document.getElementById("display-pic-name").innerText = CURRENT_PIC;
+        }
     }
 
     function handleLogin() {
-      const name = document.getElementById("login-pic-name").value.trim().toUpperCase();
-      const pass = document.getElementById("login-password").value;
-      if (pass === "itc2026") {
-        localStorage.setItem("itc_pic_session", name);
-        location.reload();
-      } else {
-        Swal.fire('Error', 'Password Salah!', 'error');
-      }
+        const name = document.getElementById("login-pic-name").value.trim().toUpperCase();
+        const pass = document.getElementById("login-password").value;
+        if (pass === "hsm2026") {
+            localStorage.setItem("itc_pic_session", name);
+            location.reload();
+        } else {
+            Swal.fire('Error', 'Password Salah!', 'error');
+        }
     }
 
     function handleLogout() {
-      localStorage.removeItem("itc_pic_session");
-      location.reload();
+        localStorage.removeItem("itc_pic_session");
+        location.reload();
     }
 
-    async function updateQueueCount() {
-      const count = await db.pendingLogs.count();
-      const el = document.getElementById('sync-status');
-      if(count > 0) {
-        el.classList.remove('hidden');
-        document.getElementById('queue-count').innerText = count;
-      } else {
-        el.classList.add('hidden');
-      }
-    }
-
-    // -- FUNGSI INPUT DATA (Simpan ke HP dulu) --
-    function showInputForm() {
-      Swal.fire({
-        title: 'INPUT DATA YARD',
-        confirmButtonText: 'SIMPAN KE HP',
-        showCancelButton: true,
-        html: `
-          <input id="i_plate" class="swal2-input-custom" placeholder="PLAT NOMOR" oninput="this.value = this.value.replace(/\\s/g, '').toUpperCase()">
-          <select id="i_ws" class="swal2-input-custom">
-            <option value="">-- Workstation --</option>
-            <option>Inbound Check</option><option>Washing</option><option>PDI</option>
-            <option>Ready to Party</option><option>Display Area</option>
-          </select>
-          <input id="i_pem" class="swal2-input-custom" placeholder="PEMINJAM / DRIVER">
-        `,
-        preConfirm: () => {
-          const data = {
-            plate: document.getElementById('i_plate').value.replace(/\s/g, '').toUpperCase(),
+    // -- CORE LOGIC: SIMPAN & SYNC --
+    async function saveAndSync() {
+        const data = {
+            plate: document.getElementById('i_plate').value.trim().toUpperCase(),
+            parking: document.getElementById('i_park').value,
             workstation: document.getElementById('i_ws').value,
+            fuel: document.getElementById('i_fuel').value,
             peminjam: document.getElementById('i_pem').value,
             pic: CURRENT_PIC,
-            timestamp: new Date().toLocaleString('id-ID')
-          };
-          if(!data.plate || !data.workstation) {
-            Swal.showValidationMessage('Lengkapi Plat & Workstation!');
-            return false;
-          }
-          return data;
+            timestamp: new Date().toLocaleString('id-ID'),
+            isSynced: 0
+        };
+
+        if(!data.plate || !data.workstation || !data.parking) {
+            return Swal.fire('Oops!', 'Lengkapi data wajib (Plat, Parkir, WS)!', 'warning');
         }
-      }).then(async (r) => {
-        if(r.isConfirmed) {
-          // SIMPAN KE DATABASE LOKAL
-          await db.pendingLogs.add(r.value);
-          updateQueueCount();
-          
-          Swal.fire({
-            title: 'Tersimpan di Lokal',
-            text: 'Data aman di HP. Mencoba sinkronisasi ke Cloud...',
-            icon: 'info',
-            timer: 2000,
-            showConfirmButton: false
-          });
-          
-          // Langsung coba sinkronkan
-          syncData();
-        }
-      });
-    }
 
-    // -- FUNGSI SINKRONISASI (Kirim ke Cloud) --
-    async function syncData() {
-      const allData = await db.pendingLogs.toArray();
-      if(allData.length === 0) return;
+        // 1. Simpan ke database lokal dulu (Offline-First)
+        await db.logs.add(data);
+        
+        // 2. Bersihkan Form
+        ['i_plate', 'i_park', 'i_ws', 'i_fuel', 'i_pem'].forEach(id => document.getElementById(id).value = "");
+        
+        // 3. Update Tampilan Riwayat
+        renderHistory();
 
-      for (const item of allData) {
-        try {
-          const response = await fetch(`${API_URL}?action=submitData`, {
-            method: 'POST',
-            mode: 'no-cors', // Penting jika GAS tidak set CORS
-            body: JSON.stringify(item)
-          });
+        // 4. Coba kirim ke Cloud
+        syncData();
 
-          // Karena no-cors tidak bisa baca response, kita asumsikan sukses jika fetch tidak error
-          // Atau lebih baik pakai status return jika GAS anda mendukung CORS
-          await db.pendingLogs.delete(item.id);
-        } catch (e) {
-          console.error("Gagal sinkron ID:", item.id);
-        }
-      }
-      updateQueueCount();
-      refreshSummary();
-    }
-
-    function refreshSummary() {
-      fetch(`${API_URL}?action=getSummary`)
-        .then(res => res.json())
-        .then(data => renderSummary(data))
-        .catch(e => console.log("Offline / Error Summary"));
-    }
-
-    function renderSummary(data) {
-      const labels = [
-        {key:'ready', label:'READY', col:'bg-green-600', search:'ready to party'},
-        {key:'washing', label:'WASHING', col:'bg-cyan-500', search:'washing'},
-        {key:'pdi', label:'PDI', col:'bg-pink-500', search:'pdi'},
-        {key:'display', label:'DISPLAY', col:'bg-orange-500', search:'display area'}
-      ];
-      document.getElementById('summary-grid').innerHTML = labels.map(i => `
-        <div class="${i.col} text-white p-3 rounded-xl shadow-lg">
-          <p class="text-[9px] font-black uppercase opacity-80">${i.label}</p>
-          <h3 class="text-xl font-black">${data[i.key] || 0}</h3>
-        </div>
-      `).join('');
-    }
-
-    function handleSearch() {
-      const plate = document.getElementById('plateSearch').value.trim().replace(/\s/g, '').toUpperCase();
-      if(!plate) return;
-      Swal.fire({ title: 'Searching...', didOpen: () => Swal.showLoading() });
-      fetch(`${API_URL}?action=searchPlate&plate=${plate}`)
-        .then(res => res.json())
-        .then(data => {
-          Swal.close();
-          if(!data.latest) return Swal.fire('Not Found', 'Data tidak ada', 'info');
-          Swal.fire({
-            title: `PLAT: ${data.latest}`,
-            html: `<div class="text-left text-sm"><b>WS:</b> ${data.latest}<br><b>PIC:</b> ${data.latest}</div>`
-          });
+        Swal.fire({ 
+            icon: 'success', 
+            title: 'Berhasil Disimpan', 
+            text: 'Data dicatat di HP. Sedang dikirim ke Cloud...', 
+            timer: 1500, 
+            showConfirmButton: false 
         });
     }
 
-    function goToDatabase() { window.location.href = "database.html"; }
+    async function syncData() {
+        const unsyncedData = await db.logs.where('isSynced').equals(0).toArray();
+        
+        if (unsyncedData.length === 0) {
+            document.getElementById('sync-alert').classList.add('hidden');
+            return;
+        }
+
+        document.getElementById('sync-alert').classList.remove('hidden');
+        document.getElementById('queue-count').innerText = unsyncedData.length;
+
+        for (const item of unsyncedData) {
+            try {
+                // Menghapus properti id & isSynced agar tidak masuk ke Spreadsheet
+                const { id, isSynced, ...cleanData } = item;
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', 
+                    body: JSON.stringify(cleanData)
+                });
+
+                // Tandai sebagai tersinkronisasi
+                await db.logs.update(item.id, { isSynced: 1 });
+            } catch (err) {
+                console.error("Gagal sinkron ID:", item.id);
+            }
+        }
+        
+        renderHistory();
+        const remaining = await db.logs.where('isSynced').equals(0).count();
+        if (remaining === 0) document.getElementById('sync-alert').classList.add('hidden');
+    }
+
+    async function renderHistory() {
+        const history = await db.logs.orderBy('id').reverse().limit(10).toArray();
+        const container = document.getElementById('history-list');
+        
+        if (history.length === 0) {
+            container.innerHTML = `<div class="text-center py-10 opacity-30 text-xs italic uppercase">Belum ada aktivitas</div>`;
+            return;
+        }
+
+        container.innerHTML = history.map(item => `
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center transition active:scale-95">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full ${item.isSynced ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'} flex items-center justify-center text-xs">
+                        <i class="fa ${item.isSynced ? 'fa-check-circle' : 'fa-clock'}"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-black text-slate-800">${item.plate}</div>
+                        <div class="text-[9px] text-gray-400 font-bold uppercase">${item.workstation} | ${item.parking}</div>
+                        <div class="text-[8px] text-gray-300 mt-0.5">${item.timestamp}</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-[8px] font-black uppercase tracking-widest ${item.isSynced ? 'text-emerald-500' : 'text-amber-500'}">
+                        ${item.isSynced ? 'Synced' : 'Pending'}
+                    </span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function clearHistory() {
+        const result = await Swal.fire({
+            title: 'Hapus Riwayat Lokal?',
+            text: "Ini tidak menghapus data yang sudah masuk di Google Sheets.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Bersihkan'
+        });
+
+        if (result.isConfirmed) {
+            await db.logs.clear();
+            renderHistory();
+        }
+    }
 </script>
 </body>
 </html>
